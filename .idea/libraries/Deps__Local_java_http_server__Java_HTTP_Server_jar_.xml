@@ -1,0 +1,9 @@
+<component name="libraryTable">
+  <library name="Deps: Local java-http-server (Java-HTTP-Server.jar)">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../Java-HTTP-Server/out/artifacts/Java_HTTP_Server_jar/Java-HTTP-Server.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>

@@ -1,0 +1,1 @@
+/Users/austincripe/Documents/Code/http_ttt/src:/Users/austincripe/Documents/Code/Java-HTTP-Server/out/production/Java-HTTP-Server:/Users/austincripe/.m2/repository/org/clojure/clojure/1.8.0/clojure-1.8.0.jar
