@@ -1,5 +1,5 @@
 {:paths ["src"]
- :deps  {org.clojure/clojure               {:mvn/version "1.8.0"}
+ :deps  {org.clojure/clojure               {:mvn/version "1.12.1"}
          java-http-server/java-http-server {:local/root "../Java-HTTP-Server/out/artifacts/Java_HTTP_Server_jar/Java-HTTP-Server.jar"}
          tic-tac-toe/tic-tac-toe           {:git/url "https://github.com/AuztinC/Clojure-tic-tac-toe.git", :git/sha "2877881b97a89c14461326ea8f9fb94be756fda5"}}
  :aliases

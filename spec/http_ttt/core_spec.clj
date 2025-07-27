@@ -1,7 +1,8 @@
 (ns http-ttt.core-spec
   (:require [speclj.core :refer :all]
-            [http-ttt.core :refer :all])
-  (:import (Server Sleep)))
+            [http_ttt.tttHandler :refer [TttHandler]])
+  (:import (Server Sleep)
+           [http_ttt.tttHandler TttHandler]))
 
 ; obj.someMethod(10)
 ; (.someMethod obj 10)
@@ -28,8 +29,9 @@
 
 (describe "a test"
   (it "equals bytes"
-    (should= "<h1>Tic Tac Toe</h1>"
-      (String. (.getBytes "<h1>Tic Tac Toe</h1>"))))
+    (let [handler (TttHandler.)]
+     (should= "<h1>Tic Tac Toe</h1>"
+      (String. (.getBytes "<h1>Tic Tac Toe</h1>")))))
 
   (it "foos"
     (should= nil (foo (MyType.)))

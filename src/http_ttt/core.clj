@@ -1,6 +1,8 @@
 (ns http-ttt.core
-  (:require [tic-tac-toe.board :as board])
-  (:import (Server ServerArgs Server)))
+  (:require [http-ttt.tttHandler :refer :all])
+  (:import (Server Server ServerArgs)
+           [http_ttt.tttHandler TttHandler]))
+
 
 
 (defn -main [& args]
@@ -10,6 +12,7 @@
     (if (.isHelpRequested config )
       (System/exit 0)
       (do
+        (.addRoute server "/ttt" (TttHandler.))
         (.start server)
-        (prn (board/get-board :3x3))))
+        ))
     ))

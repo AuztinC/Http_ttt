@@ -12,12 +12,14 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Deps: org.clojure/clojure:1.8.0" level="project" />
-    <orderEntry type="library" name="Deps: Local java-http-server (Java-HTTP-Server.jar)" level="project" />
-    <orderEntry type="library" name="Deps: tic-tac-toe:287788" level="project" />
-    <orderEntry type="library" name="Deps: speclj:3.3.2" level="project" />
-    <orderEntry type="library" name="Deps: fresh:1.1.2" level="project" />
+    <orderEntry type="library" name="Deps: org.clojure/clojure:1.12.1" level="project" />
+    <orderEntry type="library" name="Deps: org.clojure/core.specs.alpha:0.4.74" level="project" />
+    <orderEntry type="library" name="Deps: org.clojure/spec.alpha:0.5.238" level="project" />
     <orderEntry type="library" name="Deps: mmargs:1.2.0" level="project" />
+    <orderEntry type="library" name="Deps: speclj:3.3.2" level="project" />
     <orderEntry type="library" name="Deps: trptcolin/versioneer:0.1.1" level="project" />
+    <orderEntry type="library" name="Deps: tic-tac-toe:287788" level="project" />
+    <orderEntry type="library" name="Deps: Local java-http-server (Java-HTTP-Server.jar)" level="project" />
+    <orderEntry type="library" name="Deps: fresh:1.1.2" level="project" />
   </component>
 </module>
