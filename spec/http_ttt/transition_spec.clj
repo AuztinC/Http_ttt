@@ -36,4 +36,6 @@
       (should= :select-difficulty (:screen response))
       (should= [:easy] (:difficulties response))))
 
+  ;(it "moves to game after difficulties set")
+
   )

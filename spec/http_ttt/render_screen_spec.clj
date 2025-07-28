@@ -15,4 +15,16 @@
           response (sut/render-screen state)]
       (should-contain "<h1>Select difficulty</h1>"
         response)))
+
+  (it "hidden fields"
+    (let [state {:screen       :game
+                 :players      [:ai :human]
+                 :board-size   :3x3
+                 :difficulties [:easy :hard]}
+          output (sut/hidden-fields state)]
+      (should= [[:input {:type "hidden", :name "screen", :value "game"}]
+                [:input {:type "hidden", :name "players", :value "ai-human"}]
+                [:input {:type "hidden", :name "difficulties", :value "easy-hard"}]
+                [:input {:type "hidden", :name "board-size", :value "3x3"}]]
+        output)))
   )

@@ -1,45 +1,86 @@
 (ns http-ttt.render-screen
-  (:require [hiccup2.core :as h]))
+  (:require [clojure.string :as str]
+            [hiccup2.core :as h]
+            [tic-tac-toe.board :as board]))
 
+(defn hidden-fields [state]
+  (filter some?
+    [[:input {:type "hidden" :name "screen" :value (name (:screen state))}]
+     (when-let [players (:players state)]
+       [:input {:type "hidden" :name "players" :value (str/join "-" (map name players))}])
+     (when-let [diffs (:difficulties state)]
+       [:input {:type "hidden" :name "difficulties" :value (str/join "-" (map name diffs))}])
+     (when-let [board (:board-size state)]
+       [:input {:type "hidden" :name "board-size" :value (str (name board))}])]))
 
 (defmulti render-screen :screen)
 
-(defmethod render-screen :select-game-mode [_state]
+(defmethod render-screen :select-game-mode [state]
   (-> [:html
        [:head [:title "Tic Tac Toe"]]
        [:body
         [:h1 "Select a game mode"]
-        [:form {:method "get" :action "/ttt"}
-         [:input {:type "hidden" :name "screen" :value "select-game-mode"}]
-         [:button {:type "submit" :name "choice" :value "1"} "Human vs AI"]
-         [:button {:type "submit" :name "choice" :value "2"} "AI vs Human"]
-         [:button {:type "submit" :name "choice" :value "3"} "Human vs Human"]
-         [:button {:type "submit" :name "choice" :value "4"} "AI vs AI"]]]]
+        (apply vector :form {:method "get" :action "/ttt"}
+          (concat (hidden-fields state)
+            [[:button {:type "submit" :name "choice" :value "1"} "Human vs AI"]
+             [:button {:type "submit" :name "choice" :value "2"} "AI vs Human"]
+             [:button {:type "submit" :name "choice" :value "3"} "Human vs Human"]
+             [:button {:type "submit" :name "choice" :value "4"} "AI vs AI"]]))]]
     h/html
     str))
 
-(defmethod render-screen :select-board [_state]
+(defmethod render-screen :select-board [state]
   (-> [:html
        [:head [:title "Tic Tac Toe"]]
        [:body
         [:h1 "Select a board"]
-        [:form {:method "get" :action "/ttt"}
-         [:input {:type "hidden" :name "screen" :value "select-board"}]
-         [:button {:type "submit" :name "choice" :value "1"} "3x3"]
-         [:button {:type "submit" :name "choice" :value "2"} "4x4"]
-         [:button {:type "submit" :name "choice" :value "3"} "3x3x3"]]]]
+        (apply vector :form {:method "get" :action "/ttt"}
+          (concat (hidden-fields state)
+            [[:button {:type "submit" :name "choice" :value "1"} "3x3"]
+             [:button {:type "submit" :name "choice" :value "2"} "4x4"]
+             [:button {:type "submit" :name "choice" :value "3"} "3x3x3"]]))]]
     h/html
     str))
 
-(defmethod render-screen :select-difficulty [_state]
+(defmethod render-screen :select-difficulty [state]
   (-> [:html
        [:head [:title "Tic Tac Toe"]]
        [:body
         [:h1 "Select difficulty"]
         [:form {:method "get" :action "/ttt"}
-         [:input {:type "hidden" :name "screen" :value "select-difficulty"}]
+         (hidden-fields state)
          [:button {:type "submit" :name "choice" :value "1"} "Easy"]
          [:button {:type "submit" :name "choice" :value "2"} "Medium"]
          [:button {:type "submit" :name "choice" :value "3"} "Hard"]]]]
+    h/html
+    str))
+
+(defn render-cell [idx value state]
+  (if (empty? value)
+    [:td {:style {:width "60px" :height "60px"}}
+     [:form {:method "get" :action "/ttt"}
+      [:input {:type "hidden" :name "index" :value idx}]
+      [:button {:type "submit"} idx]]]
+    [:td {:style {:width "60px" :height "60px" :text-align "center" :font-size "2em"}}
+     value]))
+
+(defn render-board [board size state]
+  (let [dim (case size
+              :3x3 3
+              :4x4 4
+              :3x3x3 9)]
+    (->> (map-indexed vector board)
+      (partition dim)
+      (map (fn [row] [:tr (map (fn [[idx cell]]
+                                 (render-cell idx (first cell) state))
+                            row)]))
+      (into [:table {:style {:border-collapse "collapse"}}]))))
+
+(defmethod render-screen :game [state]
+  (-> [:html
+       [:head [:title "Tic Tac Toe"]]
+       [:body
+        [:h1 "Select difficulty"]
+        (render-board (board/get-board (:board-size state)) (:board-size state) state)]]
     h/html
     str))
