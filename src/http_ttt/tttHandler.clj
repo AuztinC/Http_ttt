@@ -13,14 +13,14 @@
         (map #(str/split % #"=" 2))
         (into {})))))
 
-
 (deftype TttHandler [store]
   RouteHandler
   (handle [_this req]
     (let [path (String. (.getPath req))
           query (parse-query-params path)
+          screen (keyword (get query "screen" "select-game-mode"))
           state {:store  store
-                 :screen :select-game-mode}
+                 :screen screen}
           updated-state (if-let [choice (get query "choice")]
                           (transition/transition state choice)
                           state)

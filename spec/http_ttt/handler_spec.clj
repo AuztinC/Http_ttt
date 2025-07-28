@@ -9,20 +9,19 @@
 
   (context "get"
     ;HttpRequest req = new HttpRequest(Methods.GET, "/");
-    (context "screen state"
-     (it "select-game-mode"
+    (it "select-game-mode"
       (let [^HttpRequest req (HttpRequest. Methods/GET "/" "1.1" nil nil)
             handler (TttHandler. :mem)
             ^HttpResponse response (.handle handler req)
             body (String. (.getBody response))]
-        (should-contain "<h1>Select a game mode</h1>" body)))))
+        (should-contain "<h1>Select a game mode</h1>" body))))
 
   (context "post"
-    (it "select-game-mode"
+    (it "select-game-mode goes to Select board"
       (let [^HttpRequest req (HttpRequest. Methods/POST "/ttt?choice=1")
             handler (TttHandler. :mem)
             ^HttpResponse response (.handle handler req)
             body (String. (.getBody response))]
-        (should-contain "<h1>Select a game mode</h1>" body))))
+        (should-contain "<h1>Select a board</h1>" body))))
 
   )
