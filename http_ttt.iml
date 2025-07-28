@@ -15,11 +15,14 @@
     <orderEntry type="library" name="Deps: org.clojure/clojure:1.12.1" level="project" />
     <orderEntry type="library" name="Deps: org.clojure/core.specs.alpha:0.4.74" level="project" />
     <orderEntry type="library" name="Deps: org.clojure/spec.alpha:0.5.238" level="project" />
-    <orderEntry type="library" name="Deps: mmargs:1.2.0" level="project" />
-    <orderEntry type="library" name="Deps: speclj:3.3.2" level="project" />
+    <orderEntry type="library" name="Deps: org.clojure/tools.namespace:1.5.0" level="project" />
+    <orderEntry type="library" name="Deps: speclj:3.9.0" level="project" />
     <orderEntry type="library" name="Deps: trptcolin/versioneer:0.1.1" level="project" />
     <orderEntry type="library" name="Deps: tic-tac-toe:287788" level="project" />
+    <orderEntry type="library" name="Deps: hiccup:2.0.0-alpha2" level="project" />
     <orderEntry type="library" name="Deps: Local java-http-server (Java-HTTP-Server.jar)" level="project" />
-    <orderEntry type="library" name="Deps: fresh:1.1.2" level="project" />
+    <orderEntry type="library" name="Deps: org.clojure/java.classpath:1.1.0" level="project" />
+    <orderEntry type="library" name="Deps: org.clojure/java.jdbc:0.7.12" level="project" />
+    <orderEntry type="library" name="Deps: org.clojure/tools.reader:1.4.0" level="project" />
   </component>
 </module>

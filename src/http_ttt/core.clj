@@ -1,18 +1,27 @@
 (ns http-ttt.core
-  (:require [http-ttt.tttHandler :refer :all])
+  (:require [http-ttt.tttHandler :refer :all]
+            [tic-tac-toe.psql :as pg])
   (:import (Server Server ServerArgs)
            [http_ttt.tttHandler TttHandler]))
 
+(defn handler-factory [store]
+  (TttHandler. store))
+
+(defn server-factory [config]
+  (Server. config))
 
 
 (defn -main [& args]
-  (let [args-array (into-array String args)
+  (let [flags (set args)
+        store (cond
+                (flags "-file") :file
+                (flags "-psql") (do (pg/db-setup) :psql)
+                :else :mem)
+        args-array (into-array String args)
         config (ServerArgs. args-array)
-        server (Server. config)]
-    (if (.isHelpRequested config )
+        server (server-factory config)]
+    (if (.isHelpRequested config)
       (System/exit 0)
       (do
-        (.addRoute server "/ttt" (TttHandler.))
-        (.start server)
-        ))
-    ))
+        (.addRoute server "/ttt\\?*.*" (handler-factory store))
+        (.start server)))))
