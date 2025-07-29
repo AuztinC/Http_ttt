@@ -8,7 +8,8 @@
   (:import (Server StatusCode)
            (Server.HTTP HttpRequest HttpResponse)
            (Server.Routes RouteHandler)))
-
+;; TODO ARC - get starting screens working
+;; TODO ARC - continue game - replay
 (defn- determine-starting-screen [store query]
   (cond
     (db/in-progress? {:store store}) :in-progress-game
@@ -46,8 +47,7 @@
 (defn query-state [cookie-map store query]
   (let [game-from-cookie (if (and (get cookie-map "game") (not (str/blank? (get cookie-map "game"))))
                            (read-string (get cookie-map "game")))
-        ;game-id (when game-id-str (Integer/parseInt game-id-str))
-        state-from-db (when (:id game-from-cookie) (db/find-game-by-id {:store store} (:id game-from-cookie)))]
+         state-from-db (when (:id game-from-cookie) (db/find-game-by-id {:store store} (:id game-from-cookie)))]
     (or state-from-db
       game-from-cookie
       {:store        store
@@ -58,16 +58,6 @@
        :difficulties (parse-players (get query "difficulties"))
        :turn         "p1"
        :markers      ["X" "O"]})))
-
-(defn play-until-human [state]
-  (loop [current state]
-    (let [player (case (:turn current)
-                   "p1" (first (:players current))
-                   "p2" (second (:players current)))]
-      (cond
-        (= :ai player) (recur (game/next-state current))
-        (board/check-winner (:board current)) (assoc current :screen :game-over)
-        :else current))))
 
 (defn handle-request
   [{:keys [store path cookies]}]

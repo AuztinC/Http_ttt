@@ -93,7 +93,7 @@
         (when (auto-refresh? state)
           [:meta {:http-equiv "refresh" :content "1"}])]
        [:body
-        [:h1 "Ur gamin"]
+        [:h1 "Tic-Tac-Toe!"]
         (render-board (:board state) (:board-size state) state)]]
     h/html
     str))

@@ -1,9 +1,10 @@
 (ns http-ttt.render-screen-spec
   (:require [speclj.core :refer :all]
-            [http-ttt.render-screen :as sut]))
+            [http-ttt.render-screen :as sut]
+            [tic-tac-toe.board :as board]))
 
 (describe "render screen"
-
+  (with-stubs)
   (it "select-board-size"
     (let [state {:screen :select-board}
           response (sut/render-screen state)]
@@ -16,6 +17,13 @@
       (should-contain "<h1>Select difficulty</h1>"
         response)))
 
+  (it "in game"
+    (with-redefs [sut/render-board (stub :render-board)]
+     (let [state {:screen :game}
+          response (sut/render-screen state)]
+      (should-contain "<h1>Tic-Tac-Toe!</h1>"
+        response))))
+
   (it "hidden fields"
     (let [state {:screen       :game
                  :players      [:ai :human]
@@ -27,4 +35,14 @@
                 [:input {:type "hidden", :name "difficulties", :value "easy-hard"}]
                 [:input {:type "hidden", :name "board-size", :value "3x3"}]]
         output)))
+
+  (it "adds meta tag for ai ai"
+    (let [state {:screen :game
+                 :players [:ai :ai]
+                 :board-size :3x3
+                 :board (board/get-board :3x3)
+                 :turn "p1"
+                 :markers ["X" "O"]}
+          output (sut/render-screen state)]
+      (should-contain "http-equiv=\"refresh\"" output)))
   )

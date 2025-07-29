@@ -78,7 +78,7 @@
       (should= :3x3 (:board-size state))
       (should= :game (:screen state))
       (should= [["X"] [""] [""] [""] [""] [""] [""] [""] [""]] (:board state))
-      (should-contain "Ur gamin" html)
+      (should-contain "Tic-Tac-Toe!" html)
       (should-not-contain "Select a game mode" html)))
 
   (it "calls game/next-state when turn is AI"
