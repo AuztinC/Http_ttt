@@ -23,19 +23,8 @@
         (map #(str/split % #"=" 2))
         (into {})))))
 
-(defn parse-players [param]
+(defn parse-hyphens [param]
   (when param (vec (map keyword (str/split param #"-")))))
-
-(defn new-game? [state]
-  (let [board (:board state)]
-    (if (nil? board)
-      false
-      (let [empty-count (case (:board-size state)
-                          :3x3 9
-                          :4x4 16
-                          :3x3x3 27
-                          :default nil)]
-        (= empty-count (count (board/open-positions board)))))))
 
 (defn- parse-cookies [^String cookie-header]
   (when cookie-header
@@ -45,17 +34,21 @@
       (into {}))))
 
 (defn query-state [cookie-map store query]
-  (let [game-from-cookie (if (and (get cookie-map "game") (not (str/blank? (get cookie-map "game"))))
-                           (read-string (get cookie-map "game")))
-         state-from-db (when (:id game-from-cookie) (db/find-game-by-id {:store store} (:id game-from-cookie)))]
+  (let [id-str (get cookie-map "gameId")
+        game-id (when (and id-str (not (str/blank? id-str)))
+                  (Integer/parseInt id-str))
+        state-from-db (when game-id
+                        (db/find-game-by-id {:store store} game-id))
+        full-state-cookie (when-let [g (get cookie-map "game")]
+                            (read-string g))]
     (or state-from-db
-      game-from-cookie
+      full-state-cookie
       {:store        store
        :ui           :web
        :screen       (determine-starting-screen store query)
-       :players      (parse-players (get query "players"))
-       :board-size   (first (parse-players (get query "board-size")))
-       :difficulties (parse-players (get query "difficulties"))
+       :players      (parse-hyphens (get query "players"))
+       :board-size   (keyword (get query "board-size"))
+       :difficulties (parse-hyphens (get query "difficulties"))
        :turn         "p1"
        :markers      ["X" "O"]})))
 
@@ -64,35 +57,35 @@
   (let [query (parse-query-params path)
         cookie-map (parse-cookies cookies)
         state (query-state cookie-map store query)
-
-        human-move (if-let [choice (get query "choice")]
-                     (transition/transition state choice)
+        next-state (if-let [choice (get query "choice")]
+                     (transition/handle-screen state choice)
                      state)
-        next-player (case (:turn human-move)
-                      "p1" (first (:players human-move))
-                      "p2" (second (:players human-move)))
-        ai-move (if (and (= :game (:screen human-move)) (= :ai next-player))
-                  (game/next-state human-move)
-                  human-move)
+        next-player (case (:turn next-state)
+                      "p1" (first (:players next-state))
+                      "p2" (second (:players next-state)))
+        ai-move (if (and (= :game (:screen next-state)) (= :ai next-player))
+                  (game/next-state next-state)
+                  next-state)
         final-state (if (and (:board ai-move) (board/check-winner (:board ai-move)))
                       (assoc ai-move :screen :game-over)
                       ai-move)
-        html (render-screen final-state)
-        set-cookie? (and
-                      (:set-cookie? human-move))]
+        html (render-screen final-state)]
     {:state       final-state
      :html        html
      :set-cookie? true}))
-;; TODO ARC - clear cookie game over
 
 (deftype TttHandler [store]
   RouteHandler
   (handle [_ req]
     (let [path (String. (.getPath req))
           cookies (try (.getHeader req "cookie") (catch Exception _ nil))
-          {:keys [state html set-cookie?]} (handle-request {:store store :path path :cookies cookies})
+          {:keys [state html]} (handle-request {:store store :path path :cookies cookies})
           body (byte-array (.getBytes html))
-          header (if set-cookie?
-                   (byte-array (.getBytes (str "Set-Cookie: game=" state "; Path=/\r\nContent-Type: text/html\r\n"))))
+          header (cond
+                   (= :game-over (:screen state))
+                   (byte-array (.getBytes (str "Set-Cookie: game=; Max-Age=0; Path=/\r\n" "Set-Cookie: gameId=; Max-Age=0; Path=/\r\nContent-Type: text/html\r\n")))
+                   (:id state)
+                   (byte-array (.getBytes (str "Set-Cookie: game=" state "; Path=/" "Set-Cookie: gameId=" (:id state) "; Path=/\r\nContent-Type: text/html\r\n")))
+                   :else (byte-array (.getBytes (str "Set-Cookie: game=" state "; Path=/\r\nContent-Type: text/html\r\n"))))
           statusOK (. StatusCode valueOf "OK")]
       (HttpResponse. statusOK header body))))

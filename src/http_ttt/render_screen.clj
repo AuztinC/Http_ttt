@@ -63,16 +63,16 @@
 
 (defn render-cell [idx value state]
   (if (empty? value)
-    [:td {:style {:width "60px" :height "60px"}}
+    [:td {:style {:width "60px" :height "60px" :border "1px solid black"}}
      [:form {:method "get" :action "/ttt"}
       [:input {:type "hidden" :name "choice" :value idx}]
       [:input {:type "hidden" :name "screen" :value "game"}]
       [:input {:type "hidden" :name "players" :value (str/join "-" (map name (:players state)))}]
       [:input {:type "hidden" :name "board-size" :value (name (:board-size state))}]
       [:input {:type "hidden" :name "difficulties" :value (str/join "-" (map name (:difficulties state)))}]
-      [:button {:type "submit"} idx]]
+      [:button {:type "submit" :style {:background-color "white" :width "60px" :height "60px" :border "none"}} idx]]
      ]
-    [:td {:style {:width "60px" :height "60px" :text-align "center" :font-size "2em"}}
+    [:td {:style {:width "60px" :height "60px" :text-align "center" :font-size "2em" :border "1px solid black"}}
      value]))
 
 (defn render-board [board size state]
@@ -85,7 +85,7 @@
       (map (fn [row] [:tr (map (fn [[idx cell]]
                                  (render-cell idx (first cell) state))
                             row)]))
-      (into [:table {:style {:border-collapse "collapse"}}]))))
+      (into [:table]))))
 
 (defmethod render-screen :game [state]
   (-> [:html
@@ -99,11 +99,16 @@
     str))
 
 (defmethod render-screen :game-over [state]
-  (let [winner [(board/check-winner (:board state))]]
+  (let [winner (board/check-winner (:board state))]
     (-> [:html
          [:head [:title "Tic Tac Toe"]]
          [:body
           [:h1 "Game Over"]
-          [:h3 (str "Winner is " (first winner))]]]
+          (if (= "tie" winner)
+            [:h3 (str "Tie Game!" )]
+            [:h3 (str "Winner is " winner)])
+          (render-board (:board state) (:board-size state) state)
+          [:form {:method "get" :action "/ttt"}
+           [:button {:type "submit" :name "/" :value ""} "New Game?"]]]]
       h/html
       str)))

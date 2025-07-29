@@ -3,12 +3,13 @@
          java-http-server/java-http-server {:local/root "../Java-HTTP-Server/out/artifacts/Java_HTTP_Server_jar/Java-HTTP-Server.jar"}
          tic-tac-toe/tic-tac-toe           {:git/url "https://github.com/AuztinC/Clojure-tic-tac-toe.git", :git/sha "b692d98b1ff5656a802a91793858b0368072ce8b"}
          org.clojure/java.jdbc             {:mvn/version "0.7.12"}
-         hiccup/hiccup                     {:mvn/version "2.0.0-alpha2"}}
- :aliases
- {:test {:extra-deps  {speclj/speclj {:mvn/version "3.9.0"}}
-         :extra-paths ["spec"]
-         :main-opts   ["-m" "speclj.main"]}
+         hiccup/hiccup                     {:mvn/version "2.0.0-alpha2"}
+         org.postgresql/postgresql         {:mvn/version "42.7.3"}}
+:aliases
+{:test {:extra-deps  {speclj/speclj {:mvn/version "3.9.0"}}
+        :extra-paths ["spec"]
+        :main-opts   ["-m" "speclj.main"]}
 
-  :run  {:main-opts ["-m" "http-ttt.core"]}}}
+ :run  {:main-opts ["-m" "http-ttt.core"]}} }
 
 ;git@github.com:cleancoders

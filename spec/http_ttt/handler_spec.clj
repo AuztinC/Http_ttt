@@ -2,7 +2,8 @@
   (:require [speclj.core :refer :all]
             [http-ttt.tttHandler :as sut]
             [tic-tac-toe.board :as board]
-            [tic-tac-toe.persistence :as db])
+            [tic-tac-toe.persistence :as db]
+            [http-ttt.transition :as transition])
   (:import (Server Methods StatusCode)
            (Server.HTTP HttpResponse HttpRequest)
            (http_ttt.tttHandler TttHandler)))
@@ -18,17 +19,36 @@
   (context "get"
     ;HttpRequest req = new HttpRequest(Methods.GET, "/");
     (it "select-game-mode"
-      (should-contain "<h1>Select a game mode</h1>" (body Methods/GET "/ttt?screen=select-game-mode"))))
+      (should-contain "<h1>Select a game mode</h1>" (body Methods/GET "/ttt?screen=select-game-mode")))
+
+    #_(it "display :in-progress"
+      (let [state {:screen     :game
+                   :store      :mem
+                   :players    [:human :human]
+                   :board      [["X"] [""] ["X"]
+                                [""] [""] [""]
+                                [""] [""] [""]]
+                   :turn       "p1"
+                   :markers    ["X" "O"]
+                   :board-size :3x3}
+            fake-cookie-header (str "game=" state)]
+        (with-redefs [db/find-game-by-id (stub :find-game-by-id {:return state})]
+          (let [{:keys [state]} (sut/handle-request {:store   :mem
+                                                     :path    "/ttt"
+                                                     :cookies fake-cookie-header})]
+            (should= :in-progress-game (:screen state))))))
+    )
 
   (it "winning board moves to :game-over"
-    (let [winning-state {:screen  :game
-                         :store   :mem
-                         :players [:human :human]
-                         :board   [["X"] ["X"] ["X"]
-                                   [""] [""] [""]
-                                   [""] [""] [""]]
-                         :turn    "p1"
-                         :markers ["X" "O"]}
+    (let [winning-state {:screen     :game
+                         :store      :mem
+                         :players    [:human :human]
+                         :board      [["X"] ["X"] ["X"]
+                                      [""] [""] [""]
+                                      [""] [""] [""]]
+                         :turn       "p1"
+                         :markers    ["X" "O"]
+                         :board-size :3x3}
           fake-cookie-header (str "game=" winning-state)]
 
       (with-redefs [db/find-game-by-id (stub :find-game-by-id {:return winning-state})]
@@ -53,12 +73,12 @@
     (let [state {:screen     :game
                  :board      (board/get-board :3x3)
                  :board-size :3x3}]
-      (should (sut/new-game? state))))
+      (should (transition/new-game? state))))
   (it "returns false game in progress"
     (let [state {:screen     :game
                  :board      [["X"] [""] [""] [""] [""] [""] [""] [""] [""]]
                  :board-size :3x3}]
-      (should-not (sut/new-game? state))))
+      (should-not (transition/new-game? state))))
 
   (it "preserves players and board-size after choosing first move"
     (let [query "/ttt?screen=game&choice=0&players=human-ai&board-size=3x3&difficulties=hard"
@@ -82,14 +102,14 @@
       (should-not-contain "Select a game mode" html)))
 
   (it "calls game/next-state when turn is AI"
-    (let [initial-state {:screen :game
-                         :store :mem
-                         :players [:ai  :ai]
-                         :board [[""] [""] [""] [""] [""] [""] [""] [""] [""]]
+    (let [initial-state {:screen     :game
+                         :store      :mem
+                         :players    [:ai :ai]
+                         :board      [[""] [""] [""] [""] [""] [""] [""] [""] [""]]
                          :board-size :3x3
-                         :turn "p2"
-                         :markers ["X" "O"]
-                         :id 0}
+                         :turn       "p2"
+                         :markers    ["X" "O"]
+                         :id         0}
           game-str (pr-str initial-state)]
 
       (with-redefs [http-ttt.tttHandler/parse-cookies (constantly {"game" game-str})
@@ -100,6 +120,5 @@
         (sut/handle-request {:store :mem :path "/ttt" :cookies (str "game=" game-str)})
 
         (should-have-invoked :next-state))))
-
 
   )

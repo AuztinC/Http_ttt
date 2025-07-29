@@ -3,22 +3,33 @@
             [tic-tac-toe.game :as game]
             [tic-tac-toe.persistence :as db]))
 
-(defmulti transition (fn [state _] (:screen state)))
+(defn new-game? [state]
+  (let [board (:board state)]
+    (if (nil? board)
+      false
+      (let [empty-count (case (:board-size state)
+                          :3x3 9
+                          :4x4 16
+                          :3x3x3 27
+                          :default nil)]
+        (= empty-count (count (board/open-positions board)))))))
 
-(defmethod transition :select-game-mode [state choice]
+(defmulti handle-screen (fn [state _] (:screen state)))
+
+(defmethod handle-screen :select-game-mode [state choice]
   (case choice
     "1" (assoc state :players [:human :ai] :screen :select-board)
     "2" (assoc state :players [:ai :human] :screen :select-board)
     "3" (assoc state :players [:human :human] :screen :select-board)
     "4" (assoc state :players [:ai :ai] :screen :select-board)))
 
-(defmethod transition :select-board [state choice]
+(defmethod handle-screen :select-board [state choice]
   (case choice
-    "1" (assoc state :board-size :3x3 :screen :select-difficulty)
-    "2" (assoc state :board-size :4x4 :screen :select-difficulty)
-    "3" (assoc state :board-size :3x3x3 :screen :select-difficulty)))
+    "1" (assoc state :board-size :3x3 :board (board/get-board :3x3) :screen :select-difficulty)
+    "2" (assoc state :board-size :4x4 :board (board/get-board :4x4) :screen :select-difficulty)
+    "3" (assoc state :board-size :3x3x3 :board (board/get-board :3x3x3) :screen :select-difficulty)))
 
-(defmethod transition :select-difficulty [state choice]
+(defmethod handle-screen :select-difficulty [state choice]
   (let [diff (case choice
                "1" :easy
                "2" :medium
@@ -39,12 +50,14 @@
             :markers ["X" "O"]
             :set-cookie? true))))))
 
-(defmethod transition :game [state choice]
+(defmethod handle-screen :game [state choice]
   (let [marker (if (= (:turn state) "p1")
                  (first (:markers state))
                  (second (:markers state)))
-        idx (^[String] Integer/valueOf choice)
-        updated-state (assoc state :board (assoc (:board state) idx [marker]) :turn (game/next-player (:turn state)))
+        idx (Integer/parseInt choice)
+        updated-state (if (new-game? state)
+                        (assoc state :board (assoc (:board state) idx [marker]) :turn (game/next-player (:turn state)) )
+                        (assoc state :board (assoc (:board state) idx [marker]) :turn (game/next-player (:turn state))))
         empty? (= "" (first (nth (:board state) idx)))]
     (if empty?
       (do
@@ -52,9 +65,9 @@
         (assoc state :board (assoc (:board state) idx [marker])
           :screen :game
           :turn (game/next-player (:turn state))))
-      (assoc state :screen :game))))
+      state)))
 
-(defmethod transition :game-over [state _choice]
+(defmethod handle-screen :game-over [state _choice]
   (let [winner (board/check-winner (:board state))]
     (prn "state -" state)
     (prn "winner -" winner)
