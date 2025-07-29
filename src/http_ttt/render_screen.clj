@@ -90,10 +90,12 @@
     h/html
     str))
 
-(defmethod render-screen :game-over [_state]
-  (-> [:html
+(defmethod render-screen :game-over [state]
+  (let [winner [(board/check-winner (:board state))]]
+   (-> [:html
        [:head [:title "Tic Tac Toe"]]
        [:body
-        [:h1 "Game Over"]]]
+        [:h1 "Game Over"]
+        [:h3 (str "Winner is " (first winner))]]]
     h/html
-    str))
+    str)))

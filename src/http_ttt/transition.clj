@@ -40,14 +40,12 @@
             :set-cookie? true))))))
 
 (defmethod transition :game [state choice]
-  (prn "game transition state " state)
   (let [marker (if (= (:turn state) "p1")
                  (first (:markers state))
                  (second (:markers state)))
         idx (^[String] Integer/valueOf choice)
         updated-state (assoc state :board (assoc (:board state) idx [marker]) :turn (game/next-player (:turn state)))
         empty? (= "" (first (nth (:board state) idx)))]
-    (prn "empty?" updated-state)
     (if empty?
       (do
         (db/update-current-game! updated-state idx)
