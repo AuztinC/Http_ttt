@@ -59,6 +59,16 @@
        :turn         "p1"
        :markers      ["X" "O"]})))
 
+(defn play-until-human [state]
+  (loop [current state]
+    (let [player (case (:turn current)
+                   "p1" (first (:players current))
+                   "p2" (second (:players current)))]
+      (cond
+        (= :ai player) (recur (game/next-state current))
+        (board/check-winner (:board current)) (assoc current :screen :game-over)
+        :else current))))
+
 (defn handle-request
   [{:keys [store path cookies]}]
   (let [query (parse-query-params path)
@@ -71,36 +81,19 @@
         next-player (case (:turn human-move)
                       "p1" (first (:players human-move))
                       "p2" (second (:players human-move)))
-        _ (prn "player " next-player)
-        next-state (if (= :game (:screen human-move))
-                     (cond
-                       (= :ai next-player) (game/next-state human-move)
-                       (and
-                         (:board human-move)
-                         (board/check-winner (:board human-move)))
-                       (assoc human-move :screen :game-over)
-                       :else human-move)
-                     human-move)
-        html (render-screen next-state)
+        ai-move (if (and (= :game (:screen human-move)) (= :ai next-player))
+                  (game/next-state human-move)
+                  human-move)
+        final-state (if (and (:board ai-move) (board/check-winner (:board ai-move)))
+                      (assoc ai-move :screen :game-over)
+                      ai-move)
+        html (render-screen final-state)
         set-cookie? (and
                       (:set-cookie? human-move))]
-    ;(prn "cookie state" (read-string game-str))
-    {:state       next-state
+    {:state       final-state
      :html        html
      :set-cookie? true}))
 ;; TODO ARC - clear cookie game over
-;(let [player (case (:turn state)
-;                   "p1" (first (:players state))
-;                   "p2" (second (:players state)))]
-;      (cond
-;        (= [:human :human] [(first (:players state)) (second (:players state))])
-;        (if (board/check-winner (:board state))
-;          (assoc state :screen :game-over)
-;          state)
-;
-;        (= :ai player) (game/next-state state)
-;
-;        :else state))
 
 (deftype TttHandler [store]
   RouteHandler

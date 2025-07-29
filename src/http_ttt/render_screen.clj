@@ -3,6 +3,12 @@
             [hiccup2.core :as h]
             [tic-tac-toe.board :as board]))
 
+(defn auto-refresh? [state]
+  (and
+    (= :game (:screen state))
+    (= [:ai :ai] (:players state))
+    (not (board/check-winner (:board state)))))
+
 (defn hidden-fields [state]
   (filter some?
     [[:input {:type "hidden" :name "screen" :value (name (:screen state))}]
@@ -83,7 +89,9 @@
 
 (defmethod render-screen :game [state]
   (-> [:html
-       [:head [:title "Tic Tac Toe"]]
+       [:head [:title "Tic Tac Toe"]
+        (when (auto-refresh? state)
+          [:meta {:http-equiv "refresh" :content "1"}])]
        [:body
         [:h1 "Ur gamin"]
         (render-board (:board state) (:board-size state) state)]]
@@ -92,10 +100,10 @@
 
 (defmethod render-screen :game-over [state]
   (let [winner [(board/check-winner (:board state))]]
-   (-> [:html
-       [:head [:title "Tic Tac Toe"]]
-       [:body
-        [:h1 "Game Over"]
-        [:h3 (str "Winner is " (first winner))]]]
-    h/html
-    str)))
+    (-> [:html
+         [:head [:title "Tic Tac Toe"]]
+         [:body
+          [:h1 "Game Over"]
+          [:h3 (str "Winner is " (first winner))]]]
+      h/html
+      str)))

@@ -23,7 +23,7 @@
   (it "winning board moves to :game-over"
     (let [winning-state {:screen  :game
                          :store   :mem
-                         :players [:human :ai]
+                         :players [:human :human]
                          :board   [["X"] ["X"] ["X"]
                                    [""] [""] [""]
                                    [""] [""] [""]]
@@ -67,14 +67,14 @@
                                   :path    query
                                   :cookies (str "game=" {:screen     :game
                                                          :store      :mem
-                                                         :players    [:human :ai]
+                                                         :players    [:human :human]
                                                          :board      [["X"] [""] [""]
                                                                       [""] [""] [""]
                                                                       [""] [""] [""]]
                                                          :turn       "p1"
                                                          :board-size :3x3
                                                          :markers    ["X" "O"]})})]
-      (should= [:human :ai] (:players state))
+      (should= [:human :human] (:players state))
       (should= :3x3 (:board-size state))
       (should= :game (:screen state))
       (should= [["X"] [""] [""] [""] [""] [""] [""] [""] [""]] (:board state))
@@ -84,7 +84,7 @@
   (it "calls game/next-state when turn is AI"
     (let [initial-state {:screen :game
                          :store :mem
-                         :players [:human :ai]
+                         :players [:ai  :ai]
                          :board [[""] [""] [""] [""] [""] [""] [""] [""] [""]]
                          :board-size :3x3
                          :turn "p2"
