@@ -47,11 +47,11 @@
        [:head [:title "Tic Tac Toe"]]
        [:body
         [:h1 "Select difficulty"]
-        [:form {:method "get" :action "/ttt"}
-         (hidden-fields state)
-         [:button {:type "submit" :name "choice" :value "1"} "Easy"]
-         [:button {:type "submit" :name "choice" :value "2"} "Medium"]
-         [:button {:type "submit" :name "choice" :value "3"} "Hard"]]]]
+        (apply vector :form {:method "get" :action "/ttt"}
+          (concat (hidden-fields state)
+            [[:button {:type "submit" :name "choice" :value "1"} "Easy"]
+             [:button {:type "submit" :name "choice" :value "2"} "Medium"]
+             [:button {:type "submit" :name "choice" :value "3"} "Hard"]]))]]
     h/html
     str))
 
@@ -59,8 +59,13 @@
   (if (empty? value)
     [:td {:style {:width "60px" :height "60px"}}
      [:form {:method "get" :action "/ttt"}
-      [:input {:type "hidden" :name "index" :value idx}]
-      [:button {:type "submit"} idx]]]
+      [:input {:type "hidden" :name "choice" :value idx}]
+      [:input {:type "hidden" :name "screen" :value "game"}]
+      [:input {:type "hidden" :name "players" :value (str/join "-" (map name (:players state)))}]
+      [:input {:type "hidden" :name "board-size" :value (name (:board-size state))}]
+      [:input {:type "hidden" :name "difficulties" :value (str/join "-" (map name (:difficulties state)))}]
+      [:button {:type "submit"} idx]]
+     ]
     [:td {:style {:width "60px" :height "60px" :text-align "center" :font-size "2em"}}
      value]))
 
@@ -80,7 +85,15 @@
   (-> [:html
        [:head [:title "Tic Tac Toe"]]
        [:body
-        [:h1 "Select difficulty"]
-        (render-board (board/get-board (:board-size state)) (:board-size state) state)]]
+        [:h1 "Ur gamin"]
+        (render-board (:board state) (:board-size state) state)]]
+    h/html
+    str))
+
+(defmethod render-screen :game-over [_state]
+  (-> [:html
+       [:head [:title "Tic Tac Toe"]]
+       [:body
+        [:h1 "Game Over"]]]
     h/html
     str))

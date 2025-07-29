@@ -1,6 +1,10 @@
 (ns http-ttt.core
   (:require [http-ttt.tttHandler :refer :all]
-            [tic-tac-toe.psql :as pg])
+            [tic-tac-toe.psql :as pg]
+            [tic-tac-toe.edn]
+            [tic-tac-toe.persistence]
+            [tic-tac-toe.human-turn]
+            [tic-tac-toe.ai-turn])
   (:import (Server Server ServerArgs)
            [http_ttt.tttHandler TttHandler]))
 

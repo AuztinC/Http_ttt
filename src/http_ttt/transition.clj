@@ -1,9 +1,9 @@
 (ns http-ttt.transition
-  (:require [tic-tac-toe.persistence :as db]))
+  (:require [tic-tac-toe.board :as board]
+            [tic-tac-toe.game :as game]
+            [tic-tac-toe.persistence :as db]))
 
-;; TODO ARC - add game settings as params until game in progress
-
-(defmulti transition :screen)
+(defmulti transition (fn [state _] (:screen state)))
 
 (defmethod transition :select-game-mode [state choice]
   (case choice
@@ -18,17 +18,13 @@
     "2" (assoc state :board-size :4x4 :screen :select-difficulty)
     "3" (assoc state :board-size :3x3x3 :screen :select-difficulty)))
 
-
 (defmethod transition :select-difficulty [state choice]
-
   (let [diff (case choice
                "1" :easy
                "2" :medium
                "3" :hard)
         ai-count (count (filterv #(= :ai %) (:players state)))
-        updated-difficulties (conj (vec (:difficulties state)) diff)
-        _ (prn state)]
-    (prn "ai count" ai-count)
+        updated-difficulties (conj (vec (:difficulties state)) diff)]
     (if (< (count updated-difficulties) ai-count)
       (assoc state :difficulties updated-difficulties
         :screen :select-difficulty)
@@ -37,4 +33,31 @@
         (-> state
           (assoc :id (db/set-new-game-id {:store (:store state)})
             :difficulties updated-difficulties
-            :screen :game))))))
+            :screen :game
+            :board (board/get-board (:board-size state))
+            :turn "p1"
+            :markers ["X" "O"]
+            :set-cookie? true))))))
+
+(defmethod transition :game [state choice]
+  (prn "game transition state " state)
+  (let [marker (if (= (:turn state) "p1")
+                 (first (:markers state))
+                 (second (:markers state)))
+        idx (^[String] Integer/valueOf choice)
+        updated-state (assoc state :board (assoc (:board state) idx [marker]) :turn (game/next-player (:turn state)))
+        empty? (= "" (first (nth (:board state) idx)))]
+    (prn "empty?" updated-state)
+    (if empty?
+      (do
+        (db/update-current-game! updated-state idx)
+        (assoc state :board (assoc (:board state) idx [marker])
+          :screen :game
+          :turn (game/next-player (:turn state))))
+      (assoc state :screen :game))))
+
+(defmethod transition :game-over [state _choice]
+  (let [winner (board/check-winner (:board state))]
+    (prn "state -" state)
+    (prn "winner -" winner)
+    ))

@@ -1,6 +1,8 @@
 (ns http-ttt.handler-spec
   (:require [speclj.core :refer :all]
-            [http-ttt.tttHandler :as sut])
+            [http-ttt.tttHandler :as sut]
+            [tic-tac-toe.board :as board]
+            [tic-tac-toe.persistence :as db])
   (:import (Server Methods StatusCode)
            (Server.HTTP HttpResponse HttpRequest)
            (http_ttt.tttHandler TttHandler)))
@@ -18,13 +20,22 @@
     (it "select-game-mode"
       (should-contain "<h1>Select a game mode</h1>" (body Methods/GET "/"))))
 
-  (context "post"
-    (it "select-game-mode goes to Select board"
-      (should-contain "<h1>Select a board</h1>" (body Methods/POST "/ttt?choice=1")))
+  (it "winning board moves to :game-over"
+    (let [winning-state {:screen :game
+                         :store :mem
+                         :players [:human :ai]
+                         :board [["X"] ["X"] ["X"]
+                                 [""]  [""] [""]
+                                 [""]  [""] [""]]
+                         :turn "p1"
+                         :markers ["X" "O"]}
+          fake-cookie-header (str "game=" winning-state)]
 
-    (it "select-difficulty page after board selection"
-      (should-contain "<h1>Select difficulty</h1>"
-        (body Methods/POST "/ttt?screen=select-board&choice=1"))))
+      (with-redefs [db/find-game-by-id (stub :find-game-by-id {:return winning-state})]
+        (let [{:keys [state]} (sut/handle-request {:store :mem
+                                                   :path "/ttt?screen=game&choice=2"
+                                                   :cookies fake-cookie-header})]
+          (should= :game-over (:screen state))))))
 
   (context "parse-query-params"
     (it "parses single param"
@@ -36,11 +47,27 @@
 
     (it "returns nil when no query"
       (should= nil (sut/parse-query-params "/ttt")))
-
-    #_(it "builds game state from params"
-      (with-redefs [http-ttt.render-screen/render-screen (stub :render-screen)]
-       (let [out (body Methods/POST "/ttt?screen=select-difficulty&players=human-ai&board-size=3x3&choice=1")]
-       (should= {"screen" "select-difficulty" "choice" "2"}
-        out))))
     )
+
+  (it "returns true new game"
+    (let [state {:screen :game
+                 :board (board/get-board :3x3)
+                 :board-size :3x3}]
+      (should (sut/new-game? state))))
+  (it "returns false game in progress"
+    (let [state {:screen :game
+                 :board [["X"] [""] [""] [""] [""] [""] [""] [""] [""]]
+                 :board-size :3x3}]
+      (should-not (sut/new-game? state))))
+
+  #_(focus-it "preserves players and board-size after choosing first move"
+    (let [query "/ttt?screen=game&choice=0&players=human-ai&board-size=4x4&difficulties=hard"
+          {:keys [state html]} (sut/handle-request {:store :mem :path query :cookies nil})]
+      (should= [:human :ai] (:players state))
+      (should= :4x4 (:board-size state))
+      (should= :game (:screen state))
+      (should= [["X"] [""] [""] [""] [""] [""] [""] [""] [""]] (:board state))
+      (should-contain "Ur gamin" html)
+      (should-not-contain "Select a game mode" html)))
+
   )
