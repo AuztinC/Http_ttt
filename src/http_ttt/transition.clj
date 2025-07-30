@@ -1,7 +1,8 @@
 (ns http-ttt.transition
   (:require [tic-tac-toe.board :as board]
             [tic-tac-toe.game :as game]
-            [tic-tac-toe.persistence :as db]))
+            [tic-tac-toe.persistence :as db]
+            [tic-tac-toe.human-turn :as ht]))
 
 (defn safe-parse-int [s]
   (try
@@ -51,19 +52,8 @@
 (defmethod handle-screen :game [state query]
   (if (= [:ai :ai] [(first (:players state)) (second (:players state))])
     state
-    (let [marker (if (= (:turn state) "p1")
-                   (first (:markers state))
-                   (second (:markers state)))
-          idx (safe-parse-int (get query "choice"))
-          updated-state (assoc state :board (assoc (:board state) idx [marker]) :turn (game/next-player (:turn state)))
-          empty? (= "" (first (nth (:board state) idx)))]
-      (if empty?
-        (do
-          (db/update-current-game! updated-state idx)
-          (assoc state :board (assoc (:board state) idx [marker])
-            :screen :game
-            :turn (game/next-player (:turn state))))
-        state))))
+    (let [idx (safe-parse-int (get query "choice"))]
+      (ht/apply-human-move state idx))))
 
 (defmethod handle-screen :game-over [state _query]
   state)

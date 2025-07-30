@@ -10,8 +10,6 @@
            (Server.HTTP HttpRequest HttpResponse)
            (Server.Routes RouteHandler)))
 
-;; TODO ARC - continue game
-
 (defn- determine-starting-screen [store query]
   (cond
     (db/in-progress? {:store store}) :in-progress-game
@@ -52,7 +50,9 @@
         state-from-db (when game-id
                         (db/find-game-by-id {:store store} game-id))
         full-state-cookie (when-let [game (get cookie-map "game")]
-                            (read-string game))]
+                            (if (nil? query)
+                              (assoc (read-string game) :screen :in-progress-game)
+                              (read-string game)))]
     (or state-from-db
       full-state-cookie
       (query-state query store))))
@@ -84,12 +84,13 @@
         state (retrieve-state cookie-map store query)
         next-state (handle-choice state query)
         auto-advance (auto-advance next-state)
-        final-state (if (and (= :game (:screen auto-advance)) (:board auto-advance) (board/check-winner (:board auto-advance)))
+        final-state (if (and (= :game (:screen auto-advance))
+                          (:board auto-advance) (board/check-winner (:board auto-advance)))
                       (assoc auto-advance :screen :game-over)
                       auto-advance)
         html (render-screen final-state)]
-    {:state       final-state
-     :html        html}))
+    {:state final-state
+     :html  html}))
 
 (deftype TttHandler [store]
   RouteHandler

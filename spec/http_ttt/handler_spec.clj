@@ -15,14 +15,60 @@
                                body (String. (.getBody response))]
                            body))
 
+(def dummy-db-game {:id 42 :screen :game :store :mem})
+(def dummy-cookie-game (pr-str {:id 5 :players [:ai :ai]}))
+(def dummy-query-game {:id 100 :screen :select-game-mode})
+
+
 (describe "Handler"
   (with-stubs)
+
+  (describe "sut/retrieve-state"
+
+    (with-stubs)
+
+    (redefs-around [db/find-game-by-id (stub :find-game-by-id)
+                    sut/query-state (stub :query-state)])
+
+
+    (it "returns game from DB if gameId is valid"
+      (let [cookie {"gameId" "42"}
+            query nil]
+        (with-redefs [db/find-game-by-id (fn [_ id] {:id id :screen :game})]
+          (should= {:id 42 :screen :game}
+            (sut/retrieve-state cookie :mem query)))))
+
+    (it "returns full cookie state with :in-progress-game screen if query is nil"
+      (let [cookie {"game" dummy-cookie-game}]
+        (should= {:id 5 :players [:ai :ai] :screen :in-progress-game}
+          (sut/retrieve-state cookie :mem nil))))
+
+    (it "returns full cookie state directly if query exists"
+      (let [cookie {"game" dummy-cookie-game}]
+        (should= {:id 5 :players [:ai :ai]}
+          (sut/retrieve-state cookie :mem {"choice" "1"}))))
+
+    (it "falls back to query-state if nothing in cookies"
+      (with-redefs [sut/query-state (fn [_ _] dummy-query-game)]
+        (should= dummy-query-game
+          (sut/retrieve-state {} :mem {"choice" "1"}))))
+
+    (it "ignores blank gameId"
+      (with-redefs [sut/query-state (fn [_ _] dummy-query-game)]
+        (should= dummy-query-game
+          (sut/retrieve-state {"gameId" ""} :mem {"choice" "1"}))))
+
+    (it "handles missing cookies and nil query"
+      (with-redefs [sut/query-state (fn [_ _] nil)]
+        (should-be-nil (sut/retrieve-state {} :mem nil)))))
+
+
   (context "get"
     ;HttpRequest req = new HttpRequest(Methods.GET, "/");
     (it "select-game-mode"
       (should-contain "<h1>Select a game mode</h1>" (body Methods/GET "/ttt?screen=select-game-mode")))
 
-    #_(it "display :in-progress"
+    (it "display :in-progress"
         (let [state {:screen     :game
                      :store      :mem
                      :players    [:human :human]
@@ -99,43 +145,34 @@
                          :board-size :3x3
                          :turn       "p2"
                          :markers    ["X" "O"]
-                         :id         0}
-          game-str (pr-str initial-state)]
-
-      (with-redefs [http-ttt.tttHandler/parse-cookies (constantly {"game" game-str})
-                    tic-tac-toe.persistence/find-game-by-id (constantly nil)
-                    tic-tac-toe.board/check-winner (constantly false)
-                    tic-tac-toe.game/next-state (stub :next-state {:return initial-state})]
-
-        (sut/handle-request {:store :mem :path "/ttt" :cookies (str "game=" game-str)})
-
-        (should-have-invoked :next-state))))
+                         :id         0}]
+      (with-redefs [tic-tac-toe.game/next-state (stub :next-state {:return initial-state})]
+        (should-have-invoked :next-state (sut/auto-advance initial-state)))))
 
   (it "query state calls determine-start with store"
     (with-redefs [db/in-progress? (stub :in-progress? {:return {}})]
       (should= :in-progress-game (:screen (sut/query-state "/ttt" :mem)))))
 
-  #_(it "calls apply-next-moove folr replay"
-    (let [initial-state {:screen :replay
-                         :store :mem
-                         :set-cookie? true
+  (it "calls apply-next-move for replay"
+    (let [initial-state {:screen     :replay
+                         :store      :mem
                          :board-size :3x3
-                         :players [:human :ai]
-                         :moves [{:player "X", :position 0}
-                                 {:player "O", :position 6}
-                                 {:player "X", :position 1}
-                                 {:player "O", :position 7}
-                                 {:player "X", :position 2}]}
+                         :players    [:human :ai]
+                         :turn       "p1"
+                         :moves      [{:player "X", :position 0}
+                                      {:player "O", :position 6}
+                                      {:player "X", :position 1}
+                                      {:player "O", :position 7}
+                                      {:player "X", :position 2}]}
           game-str (pr-str initial-state)]
-
       (with-redefs [http-ttt.tttHandler/parse-cookies (constantly {"game" game-str})
                     tic-tac-toe.persistence/find-game-by-id (constantly nil)
                     tic-tac-toe.board/check-winner (constantly false)
                     tic-tac-toe.game/next-state (stub :next-state {:return initial-state})
-                    replay/apply-next-replay-move (stub :next-move)]
-
-        (sut/handle-request {:store :mem :path "/ttt" :cookies (str "game=" game-str)})
-
+                    replay/apply-next-replay-move (stub :next-move)
+                    sut/retrieve-state (stub :retrieve-state {:return initial-state})
+                    http-ttt.render-screen/render-screen (stub :render-screen)]
+        (sut/handle-request {:store :mem :path "/ttt?screen=replay" :cookies (str "game=" game-str)})
         (should-have-invoked :next-move))))
 
   )
