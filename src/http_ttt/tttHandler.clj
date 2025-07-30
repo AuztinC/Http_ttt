@@ -44,17 +44,17 @@
    :markers      ["X" "O"]})
 
 (defn retrieve-state [cookie-map store query]
-  (let [id-str (get cookie-map "gameId")
-        game-id (when (and id-str (not (str/blank? id-str)))
-                  (Integer/parseInt id-str))
-        state-from-db (when game-id
-                        (db/find-game-by-id {:store store} game-id))
-        full-state-cookie (when-let [game (get cookie-map "game")]
-                            (if (nil? query)
-                              (assoc (read-string game) :screen :in-progress-game)
-                              (read-string game)))]
-    (or state-from-db
-      full-state-cookie
+  (let [full-state-cookie (when-let [str-game (get cookie-map "game")]
+                            (let [game (read-string str-game)]
+                              (cond
+                                (not (= store (:store game)))
+                                nil
+
+                                (nil? query)
+                                (assoc game :screen :in-progress-game)
+
+                                :else game)))]
+    (or full-state-cookie
       (query-state query store))))
 
 (defn handle-choice [state query]
@@ -101,9 +101,7 @@
           body (byte-array (.getBytes html))
           header (cond
                    (= :game-over (:screen state))
-                   (byte-array (.getBytes (str "Set-Cookie: game=; Max-Age=0; Path=/\r\n" "Set-Cookie: gameId=; Max-Age=0; Path=/\r\nContent-Type: text/html\r\n")))
-                   (:id state)
-                   (byte-array (.getBytes (str "Set-Cookie: game=" state "; Path=/" "Set-Cookie: gameId=" (:id state) "; Path=/\r\nContent-Type: text/html\r\n")))
+                   (byte-array (.getBytes (str "Set-Cookie: game=; Max-Age=0; Path=/\r\n" "Content-Type: text/html\r\n")))
                    :else (byte-array (.getBytes (str "Set-Cookie: game=" state "; Path=/\r\nContent-Type: text/html\r\n"))))
           statusOK (. StatusCode valueOf "OK")]
       (HttpResponse. statusOK header body))))
