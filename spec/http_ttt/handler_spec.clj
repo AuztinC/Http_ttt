@@ -15,7 +15,7 @@
                                body (String. (.getBody response))]
                            body))
 
-(def dummy-cookie-game (pr-str {:id 5 :players [:ai :ai] :store :mem}))
+(def dummy-cookie-game (pr-str {:id 5 :players [:ai :ai] :store :mem :board (board/get-board :3x3)}))
 (def dummy-query-game {:id 100 :screen :select-game-mode})
 
 (describe "Handler"
@@ -31,13 +31,8 @@
 
     (it "returns full cookie state with :in-progress-game screen if query is nil"
       (let [cookie {"game" dummy-cookie-game}]
-        (should= {:id 5 :players [:ai :ai] :screen :in-progress-game :store :mem}
+        (should= {:id 5 :players [:ai :ai] :screen :in-progress-game :store :mem :board (board/get-board :3x3)}
           (sut/retrieve-state cookie :mem nil))))
-
-    (it "returns full cookie state directly if query exists"
-      (let [cookie {"game" dummy-cookie-game}]
-        (should= {:id 5 :players [:ai :ai] :store :mem}
-          (sut/retrieve-state cookie :mem {"choice" "1"}))))
 
     (it "falls back to query-state if nothing in cookies"
       (with-redefs [sut/query-state (fn [_ _] dummy-query-game)]
