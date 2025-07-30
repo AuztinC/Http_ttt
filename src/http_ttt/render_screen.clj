@@ -1,7 +1,8 @@
 (ns http-ttt.render-screen
   (:require [clojure.string :as str]
             [hiccup2.core :as h]
-            [tic-tac-toe.board :as board]))
+            [tic-tac-toe.board :as board]
+            [tic-tac-toe.persistence :as db]))
 
 (defn auto-refresh? [state]
   (or
@@ -104,7 +105,7 @@
          [:body
           [:h1 "Game Over"]
           (if (= "tie" winner)
-            [:h3 (str "Tie Game!" )]
+            [:h3 (str "Tie Game!")]
             [:h3 (str "Winner is " winner)])
           (render-board (:board state) (:board-size state) state)
           [:form {:method "get" :action "/ttt"}
@@ -124,17 +125,23 @@
     str))
 
 (defmethod render-screen :replay-confirm [state]
-  (-> [:html
-       [:head [:title "Tic Tac Toe"]]
-       [:body
-        [:h1 "Would you like to watch a replay?"]
-        [:h2 "You'll need a match ID"]
-        [:form {:method "get" :action "/ttt"}
-         [:input {:type "text" :name "match-id" }]
-         [:button {:type "submit" :name "choice" :value "1"} "Yes"]
-         [:button {:type "submit" :name "choice" :value "2"} "No"]]]]
-    h/html
-    str))
+  (let [previous-games (db/previous-games? {:store (:store state)})]
+    (prn "previous games = " previous-games)
+    (-> [:html
+         [:head [:title "Tic Tac Toe"]]
+         [:body
+          [:h1 "Would you like to watch a replay?"]
+          [:h2 "You'll need a match ID"]
+          [:form {:method "get" :action "/ttt"}
+           [:input {:type "text" :name "match-id"}]
+           [:button {:type "submit" :name "choice" :value "1"} "Yes"]
+           [:button {:type "submit" :name "choice" :value "2"} "No"]]
+          [:h3 "Available game IDs"]
+          (into [:p] (map-indexed
+                       (fn [i game] (str (when (pos? i) " - ") (:id game)))
+                       previous-games))]]
+      h/html
+      str)))
 
 (defmethod render-screen :replay [state]
   (-> [:html

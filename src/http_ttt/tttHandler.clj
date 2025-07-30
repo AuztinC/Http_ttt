@@ -9,8 +9,9 @@
   (:import (Server StatusCode)
            (Server.HTTP HttpRequest HttpResponse)
            (Server.Routes RouteHandler)))
-;; TODO ARC - get starting screens working
-;; TODO ARC - continue game - replay
+
+;; TODO ARC - continue game
+
 (defn- determine-starting-screen [store query]
   (cond
     (db/in-progress? {:store store}) :in-progress-game
@@ -61,26 +62,28 @@
     (transition/handle-screen state query)
     state))
 
+(defn auto-advance [next-state]
+  (let [next-player (case (:turn next-state)
+                      "p1" (first (:players next-state))
+                      "p2" (second (:players next-state)))]
+    (cond
+      (= :game (:screen next-state))
+      (if (= :ai next-player)
+        (game/next-state next-state)
+        next-state)
+
+      (= :replay (:screen next-state))
+      (replay/apply-next-replay-move next-state)
+
+      :else next-state)))
+
 (defn handle-request
   [{:keys [store path cookies]}]
   (let [query (parse-query-params path)
         cookie-map (parse-cookies cookies)
         state (retrieve-state cookie-map store query)
         next-state (handle-choice state query)
-        _ (prn "next state " next-state)
-        next-player (case (:turn next-state)
-                      "p1" (first (:players next-state))
-                      "p2" (second (:players next-state)))
-        auto-advance (cond
-                       (= :game (:screen next-state))
-                       (if (= :ai next-player)
-                         (game/next-state next-state)
-                         next-state)
-
-                       (= :replay (:screen next-state))
-                       (replay/apply-next-replay-move next-state)
-
-                       :else next-state)
+        auto-advance (auto-advance next-state)
         final-state (if (and (= :game (:screen auto-advance)) (:board auto-advance) (board/check-winner (:board auto-advance)))
                       (assoc auto-advance :screen :game-over)
                       auto-advance)

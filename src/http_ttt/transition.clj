@@ -54,16 +54,14 @@
           :turn (game/next-player (:turn state))))
       state)))
 
-(defmethod handle-screen :game-over [state query]
-  (let [winner (board/check-winner (:board state))]
-    (prn "state -" state)
-    (prn "winner -" winner)
-    ))
+(defmethod handle-screen :game-over [state _query]
+  state)
 
 (defmethod handle-screen :in-progress-game [state query]
   (let [game (db/in-progress? {:store (:store state)})]
+
     (case (get query "choice")
-      "1" game
+      "1" (assoc game :ui :web)
       "2" (if (db/previous-games? {:store (:store state)})
             (assoc state :screen :replay-confirm)
             (assoc state :screen :select-game-mode)))))
@@ -77,5 +75,5 @@
     (= "2" (get query "choice")) (assoc state :screen :select-game-mode)
     :else state))
 
-(defmethod handle-screen :replay [state query]
+(defmethod handle-screen :replay [state _query]
   state)
