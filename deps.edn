@@ -1,7 +1,7 @@
 {:paths ["src"]
  :deps  {org.clojure/clojure               {:mvn/version "1.12.1"}
          java-http-server/java-http-server {:local/root "../Java-HTTP-Server/out/artifacts/Java_HTTP_Server_jar/Java-HTTP-Server.jar"}
-         tic-tac-toe/tic-tac-toe           {:git/url "https://github.com/AuztinC/Clojure-tic-tac-toe.git", :git/sha "d884fd97f87f93e074ef2de84548a6d0fd499f75"}
+         tic-tac-toe/tic-tac-toe           {:git/url "https://github.com/AuztinC/Clojure-tic-tac-toe.git", :git/sha "c6b41fbe17447f0b801ff6894563e68c8a2f896b"}
          org.clojure/java.jdbc             {:mvn/version "0.7.12"}
          hiccup/hiccup                     {:mvn/version "2.0.0-alpha2"}
          org.postgresql/postgresql         {:mvn/version "42.7.3"}}
@@ -11,5 +11,3 @@
         :main-opts   ["-m" "speclj.main"]}
 
  :run  {:main-opts ["-m" "http-ttt.core"]}} }
-
-;git@github.com:cleancoders

@@ -13,10 +13,13 @@
     "4" (assoc state :players [:ai :ai] :screen :select-board)))
 
 (defmethod handle-screen :select-board [state query]
-  (case (get query "choice")
-    "1" (assoc state :board-size :3x3 :board (board/get-board :3x3) :screen :select-difficulty)
-    "2" (assoc state :board-size :4x4 :board (board/get-board :4x4) :screen :select-difficulty)
-    "3" (assoc state :board-size :3x3x3 :board (board/get-board :3x3x3) :screen :select-difficulty)))
+  (let [next-screen (if (= [:human :human] [(first (:players state)) (second (:players state))])
+                      :game
+                      :select-difficulty)]
+    (case (get query "choice")
+      "1" (assoc state :board-size :3x3 :board (board/get-board :3x3) :screen next-screen)
+      "2" (assoc state :board-size :4x4 :board (board/get-board :4x4) :screen next-screen)
+      "3" (assoc state :board-size :3x3x3 :board (board/get-board :3x3x3) :screen next-screen))))
 
 (defmethod handle-screen :select-difficulty [state query]
   (let [diff (case (get query "choice")
@@ -32,6 +35,7 @@
         (db/clear-active {:store (:store state)})
         (-> state
           (assoc :id (db/set-new-game-id {:store (:store state)})
+            :active true
             :difficulties updated-difficulties
             :screen :game
             :board (board/get-board (:board-size state))

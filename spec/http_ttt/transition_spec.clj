@@ -20,6 +20,12 @@
       (should= :select-board (:screen response))
       (should= [:human :ai] (:players response))))
 
+  (it "human v human skip difficulties"
+    (let [state {:screen :select-board
+                 :players [:human :human]}
+          response (sut/handle-screen state choice)]
+      (should= :game (:screen response))))
+
   (it "board goes to difficulty"
     (let [state {:screen :select-board}
           response (sut/handle-screen state choice)]
