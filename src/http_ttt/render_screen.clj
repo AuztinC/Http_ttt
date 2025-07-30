@@ -126,7 +126,6 @@
 
 (defmethod render-screen :replay-confirm [state]
   (let [previous-games (db/previous-games? {:store (:store state)})]
-    (prn "previous games = " previous-games)
     (-> [:html
          [:head [:title "Tic Tac Toe"]]
          [:body

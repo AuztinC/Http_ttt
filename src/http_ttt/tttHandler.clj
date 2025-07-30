@@ -89,8 +89,7 @@
                       auto-advance)
         html (render-screen final-state)]
     {:state       final-state
-     :html        html
-     :set-cookie? true}))
+     :html        html}))
 
 (deftype TttHandler [store]
   RouteHandler

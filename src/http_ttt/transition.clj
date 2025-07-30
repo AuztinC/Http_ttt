@@ -3,6 +3,12 @@
             [tic-tac-toe.game :as game]
             [tic-tac-toe.persistence :as db]))
 
+(defn safe-parse-int [s]
+  (try
+    (Integer/parseInt s)
+    (catch Exception e
+      nil)))
+
 (defmulti handle-screen (fn [state _] (:screen state)))
 
 (defmethod handle-screen :select-game-mode [state query]
@@ -40,23 +46,24 @@
             :screen :game
             :board (board/get-board (:board-size state))
             :turn "p1"
-            :markers ["X" "O"]
-            :set-cookie? true))))))
+            :markers ["X" "O"]))))))
 
 (defmethod handle-screen :game [state query]
-  (let [marker (if (= (:turn state) "p1")
-                 (first (:markers state))
-                 (second (:markers state)))
-        idx (Integer/parseInt (get query "choice"))
-        updated-state (assoc state :board (assoc (:board state) idx [marker]) :turn (game/next-player (:turn state)))
-        empty? (= "" (first (nth (:board state) idx)))]
-    (if empty?
-      (do
-        (db/update-current-game! updated-state idx)
-        (assoc state :board (assoc (:board state) idx [marker])
-          :screen :game
-          :turn (game/next-player (:turn state))))
-      state)))
+  (if (= [:ai :ai] [(first (:players state)) (second (:players state))])
+    state
+    (let [marker (if (= (:turn state) "p1")
+                   (first (:markers state))
+                   (second (:markers state)))
+          idx (safe-parse-int (get query "choice"))
+          updated-state (assoc state :board (assoc (:board state) idx [marker]) :turn (game/next-player (:turn state)))
+          empty? (= "" (first (nth (:board state) idx)))]
+      (if empty?
+        (do
+          (db/update-current-game! updated-state idx)
+          (assoc state :board (assoc (:board state) idx [marker])
+            :screen :game
+            :turn (game/next-player (:turn state))))
+        state))))
 
 (defmethod handle-screen :game-over [state _query]
   state)
@@ -72,11 +79,11 @@
 
 (defmethod handle-screen :replay-confirm [state query]
   (case (get query "choice")
-    "1" (let [id (Integer/parseInt (get query "match-id"))]
+    "1" (let [id (safe-parse-int (get query "match-id"))]
           (if-let [game (db/find-game-by-id {:store (:store state)} id)]
             (assoc game :screen :replay :board (board/get-board (:board-size game)))
             state))
-    (= "2" (get query "choice")) (assoc state :screen :select-game-mode)
+    "2" (assoc state :screen :select-game-mode)
     :else state))
 
 (defmethod handle-screen :replay [state _query]
