@@ -55,23 +55,26 @@
       (should= :game (:screen response))
       (should= "p2" (:turn response))))
 
-  #_(it "calls update-current-game! when a move is made"
-    (with-redefs [db/update-current-game! (stub :update-current-game)]
-      (let [initial-board [["X"] [""] [""] [""] [""] [""] [""] [""] [""]]
-            state {:screen     :game
-                   :store      :mem
-                   :id         42
-                   :players    [:human :human]
-                   :board      initial-board
-                   :turn       "p1"
-                   :markers    ["X" "O"]
-                   :board-size :3x3}
-            output (apply hash-map (stub/last-invocation-of :sketch))]
-
+  (it "calls update-current-game! when a move is made"
+    (let [called? (atom false)
+          called-args (atom nil)
+          initial-board [["X"] [""] [""] [""] [""] [""] [""] [""] [""]]
+          state {:screen     :game
+                 :store      :mem
+                 :id         42
+                 :players    [:human :human]
+                 :board      initial-board
+                 :turn       "p1"
+                 :markers    ["X" "O"]
+                 :board-size :3x3}]
+      (with-redefs [db/update-current-game!
+                    (fn [s idx]
+                      (reset! called? true)
+                      (reset! called-args [s idx]))]
         (transition/handle-screen state "4")
-
         (should @called?)
         (should= 4 (second @called-args))
         (should= "X" (-> @called-args first :board (nth 4) first)))))
 
-  )
+
+)

@@ -55,5 +55,24 @@
           output (sut/render-screen state)]
       (should-contain "http-equiv=\"refresh\"" output)))
 
+  (it "displays in-progress game"
+    (let [state {:screen :in-progress-game}
+          output (sut/render-screen state)]
+      (should-contain "<h1>Previous game detected! Resume?</h1>"
+        output)))
+
+  (it "display replay-confirm"
+    (let [state {:screen :replay-confirm}
+          output (sut/render-screen state)]
+      (should-contain "<h1>Would you like to watch a replay?</h1>"
+        output)))
+
+  (it "display replay game"
+    (let [state {:screen :replay
+                 :id 1
+                 :board-size :3x3}
+          output (sut/render-screen state)]
+      (should-contain "<h1>Replaying game 1</h1>"
+        output)))
 
   )

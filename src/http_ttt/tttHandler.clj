@@ -4,7 +4,8 @@
             [http-ttt.transition :as transition]
             [tic-tac-toe.board :as board]
             [tic-tac-toe.game :as game]
-            [tic-tac-toe.persistence :as db])
+            [tic-tac-toe.persistence :as db]
+            [tic-tac-toe.replay :as replay])
   (:import (Server StatusCode)
            (Server.HTTP HttpRequest HttpResponse)
            (Server.Routes RouteHandler)))
@@ -33,42 +34,55 @@
       (map #(str/split % #"=" 2))
       (into {}))))
 
-(defn query-state [cookie-map store query]
+(defn query-state [query store]
+  {:store        store
+   :ui           :web
+   :screen       (determine-starting-screen store query)
+   :players      (parse-hyphens (get query "players"))
+   :board-size   (keyword (get query "board-size"))
+   :difficulties (parse-hyphens (get query "difficulties"))
+   :turn         "p1"
+   :markers      ["X" "O"]})
+
+(defn retrieve-state [cookie-map store query]
   (let [id-str (get cookie-map "gameId")
         game-id (when (and id-str (not (str/blank? id-str)))
                   (Integer/parseInt id-str))
         state-from-db (when game-id
                         (db/find-game-by-id {:store store} game-id))
-        full-state-cookie (when-let [g (get cookie-map "game")]
-                            (read-string g))]
+        full-state-cookie (when-let [game (get cookie-map "game")]
+                            (read-string game))]
     (or state-from-db
       full-state-cookie
-      {:store        store
-       :ui           :web
-       :screen       (determine-starting-screen store query)
-       :players      (parse-hyphens (get query "players"))
-       :board-size   (keyword (get query "board-size"))
-       :difficulties (parse-hyphens (get query "difficulties"))
-       :turn         "p1"
-       :markers      ["X" "O"]})))
+      (query-state query store))))
+
+(defn handle-choice [state query]
+  (if-let [choice (get query "choice")]
+    (transition/handle-screen state choice)
+    state))
 
 (defn handle-request
   [{:keys [store path cookies]}]
   (let [query (parse-query-params path)
         cookie-map (parse-cookies cookies)
-        state (query-state cookie-map store query)
-        next-state (if-let [choice (get query "choice")]
-                     (transition/handle-screen state choice)
-                     state)
+        state (retrieve-state cookie-map store query)
+        next-state (handle-choice state query)
         next-player (case (:turn next-state)
                       "p1" (first (:players next-state))
                       "p2" (second (:players next-state)))
-        ai-move (if (and (= :game (:screen next-state)) (= :ai next-player))
-                  (game/next-state next-state)
-                  next-state)
-        final-state (if (and (:board ai-move) (board/check-winner (:board ai-move)))
-                      (assoc ai-move :screen :game-over)
-                      ai-move)
+        auto-advance (cond
+                       (= :game (:screen next-state))
+                       (if (= :ai next-player)
+                         (game/next-state next-state)
+                         next-state)
+
+                       (= :replay (:screen next-state))
+                       (replay/apply-next-replay-move next-state)
+
+                       :else next-state)
+        final-state (if (and (:board auto-advance) (board/check-winner (:board auto-advance)))
+                      (assoc auto-advance :screen :game-over)
+                      auto-advance)
         html (render-screen final-state)]
     {:state       final-state
      :html        html

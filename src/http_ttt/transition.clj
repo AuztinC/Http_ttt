@@ -3,17 +3,6 @@
             [tic-tac-toe.game :as game]
             [tic-tac-toe.persistence :as db]))
 
-(defn new-game? [state]
-  (let [board (:board state)]
-    (if (nil? board)
-      false
-      (let [empty-count (case (:board-size state)
-                          :3x3 9
-                          :4x4 16
-                          :3x3x3 27
-                          :default nil)]
-        (= empty-count (count (board/open-positions board)))))))
-
 (defmulti handle-screen (fn [state _] (:screen state)))
 
 (defmethod handle-screen :select-game-mode [state choice]
@@ -55,9 +44,7 @@
                  (first (:markers state))
                  (second (:markers state)))
         idx (Integer/parseInt choice)
-        updated-state (if (new-game? state)
-                        (assoc state :board (assoc (:board state) idx [marker]) :turn (game/next-player (:turn state)) )
-                        (assoc state :board (assoc (:board state) idx [marker]) :turn (game/next-player (:turn state))))
+        updated-state (assoc state :board (assoc (:board state) idx [marker]) :turn (game/next-player (:turn state)))
         empty? (= "" (first (nth (:board state) idx)))]
     (if empty?
       (do
@@ -72,3 +59,20 @@
     (prn "state -" state)
     (prn "winner -" winner)
     ))
+
+(defmethod handle-screen :in-progress-game [state choice]
+  (let [game (db/in-progress? {:store (:store state)})]
+    (case choice
+      "1" game
+      "2" (if (db/previous-games? {:store (:store state)})
+            (assoc state :screen :replay-confirm)
+            (assoc state :screen :select-game-mode)))))
+
+(defmethod handle-screen :replay-confirm [state choice]
+  (case choice
+    "1" (let [id (Integer/parseInt choice)]
+          (if-let [game (db/find-game-by-id {:store (:store state)} id)]
+            (assoc game :screen :replay)
+            state))
+    (= "2" choice) (assoc state :screen :select-game-mode)
+    :else state))

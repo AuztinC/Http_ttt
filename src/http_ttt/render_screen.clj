@@ -5,9 +5,9 @@
 
 (defn auto-refresh? [state]
   (and
-    (= :game (:screen state))
+    (or (= :game (:screen state)) (= :replay (:screen state)))
     (= [:ai :ai] (:players state))
-    (not (board/check-winner (:board state)))))
+    #_(not (board/check-winner (:board state)))))
 
 (defn hidden-fields [state]
   (filter some?
@@ -112,3 +112,40 @@
            [:button {:type "submit" :name "/" :value ""} "New Game?"]]]]
       h/html
       str)))
+
+(defmethod render-screen :in-progress-game [state]
+  (-> [:html
+       [:head [:title "Tic Tac Toe"]]
+       [:body
+        [:h1 "Previous game detected! Resume?"]
+        [:form {:method "get" :action "/ttt"}
+         [:button {:type "submit" :name "choice" :value "1"} "Yes"]
+         [:button {:type "submit" :name "choice" :value "2"} "No"]]]]
+    h/html
+    str))
+
+(defmethod render-screen :replay-confirm [state]
+  (-> [:html
+       [:head [:title "Tic Tac Toe"]]
+       [:body
+        [:h1 "Would you like to watch a replay?"]
+        [:h2 "You'll need a match ID"]
+        [:form {:method "get" :action "/ttt"}
+         [:input {:type "text" :name "match-id" }]
+         [:button {:type "submit" :name "choice" :value "1"} "Yes"]
+         [:button {:type "submit" :name "choice" :value "2"} "No"]]]]
+    h/html
+    str))
+
+(defmethod render-screen :replay [state]
+  (-> [:html
+       [:head [:title "Tic Tac Toe"]
+        (when (auto-refresh? state)
+          [:meta {:http-equiv "refresh" :content "1"}])]
+       [:body
+        [:h1 (str "Replaying game " (:id state))]
+        (render-board (:board state) (:board-size state) state)
+        [:p (str "Turn: " (:turn state))]
+        [:p (str "Moves remaining: " (count (:moves state)))]]]
+    h/html
+    str))

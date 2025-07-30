@@ -1,7 +1,7 @@
 {:paths ["src"]
  :deps  {org.clojure/clojure               {:mvn/version "1.12.1"}
          java-http-server/java-http-server {:local/root "../Java-HTTP-Server/out/artifacts/Java_HTTP_Server_jar/Java-HTTP-Server.jar"}
-         tic-tac-toe/tic-tac-toe           {:git/url "https://github.com/AuztinC/Clojure-tic-tac-toe.git", :git/sha "b692d98b1ff5656a802a91793858b0368072ce8b"}
+         tic-tac-toe/tic-tac-toe           {:git/url "https://github.com/AuztinC/Clojure-tic-tac-toe.git", :git/sha "a56c5fb58c5de8095b27f8111c0b362f78273797"}
          org.clojure/java.jdbc             {:mvn/version "0.7.12"}
          hiccup/hiccup                     {:mvn/version "2.0.0-alpha2"}
          org.postgresql/postgresql         {:mvn/version "42.7.3"}}
