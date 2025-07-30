@@ -57,8 +57,8 @@
       (query-state query store))))
 
 (defn handle-choice [state query]
-  (if-let [choice (get query "choice")]
-    (transition/handle-screen state choice)
+  (if (get query "choice")
+    (transition/handle-screen state query)
     state))
 
 (defn handle-request
