@@ -4,10 +4,9 @@
             [tic-tac-toe.board :as board]))
 
 (defn auto-refresh? [state]
-  (and
-    (or (= :game (:screen state)) (= :replay (:screen state)))
-    (= [:ai :ai] (:players state))
-    #_(not (board/check-winner (:board state)))))
+  (or
+    (and (= :game (:screen state)) (= [:ai :ai] (:players state)))
+    (= :replay (:screen state))))
 
 (defn hidden-fields [state]
   (filter some?
@@ -143,6 +142,7 @@
         (when (auto-refresh? state)
           [:meta {:http-equiv "refresh" :content "1"}])]
        [:body
+        [:input {:type "hidden" :name "/" :value ""}]
         [:h1 (str "Replaying game " (:id state))]
         (render-board (:board state) (:board-size state) state)
         [:p (str "Turn: " (:turn state))]

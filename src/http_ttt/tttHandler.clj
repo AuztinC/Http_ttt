@@ -67,6 +67,7 @@
         cookie-map (parse-cookies cookies)
         state (retrieve-state cookie-map store query)
         next-state (handle-choice state query)
+        _ (prn "next state " next-state)
         next-player (case (:turn next-state)
                       "p1" (first (:players next-state))
                       "p2" (second (:players next-state)))
@@ -80,7 +81,7 @@
                        (replay/apply-next-replay-move next-state)
 
                        :else next-state)
-        final-state (if (and (:board auto-advance) (board/check-winner (:board auto-advance)))
+        final-state (if (and (= :game (:screen auto-advance)) (:board auto-advance) (board/check-winner (:board auto-advance)))
                       (assoc auto-advance :screen :game-over)
                       auto-advance)
         html (render-screen final-state)]

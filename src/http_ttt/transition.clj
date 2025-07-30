@@ -72,7 +72,10 @@
   (case (get query "choice")
     "1" (let [id (Integer/parseInt (get query "match-id"))]
           (if-let [game (db/find-game-by-id {:store (:store state)} id)]
-            (assoc game :screen :replay)
+            (assoc game :screen :replay :board (board/get-board (:board-size game)))
             state))
     (= "2" (get query "choice")) (assoc state :screen :select-game-mode)
     :else state))
+
+(defmethod handle-screen :replay [state query]
+  state)
