@@ -62,10 +62,11 @@
         output)))
 
   (it "display replay-confirm"
-    (let [state {:screen :replay-confirm}
+    (with-redefs [db/previous-games? (stub :previous-games)]
+     (let [state {:screen :replay-confirm}
           output (sut/render-screen state)]
       (should-contain "<h1>Would you like to watch a replay?</h1>"
-        output)))
+        output))))
 
   (it "display replay game"
     (let [state {:screen :replay

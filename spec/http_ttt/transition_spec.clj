@@ -8,6 +8,7 @@
   (:import (Server.HTTP HttpResponse)
            (http_ttt.tttHandler TttHandler)))
 
+(def choice {"choice" "1"})
 
 (describe "transitions"
   (with-stubs)
@@ -15,28 +16,24 @@
 
   (it "game-mode goes to select-board"
     (let [state {:screen :select-game-mode}
-          choice "1"
           response (sut/handle-screen state choice)]
       (should= :select-board (:screen response))
       (should= [:human :ai] (:players response))))
 
   (it "board goes to difficulty"
     (let [state {:screen :select-board}
-          choice "1"
           response (sut/handle-screen state choice)]
       (should= :select-difficulty (:screen response))
       (should= :3x3 (:board-size response))))
 
   (it "difficulty goes to game"
     (let [state {:screen :select-difficulty :store :mem}
-          choice "1"
           response (sut/handle-screen state choice)]
       (should= :game (:screen response))
       (should= [:easy] (:difficulties response))))
 
   (it "2 difficulties for [ai ai] goes to game"
     (let [state {:screen :select-difficulty :store :mem :players [:ai :ai]}
-          choice "1"
           response (sut/handle-screen state choice)]
       (should= :select-difficulty (:screen response))
       (should= [:easy] (:difficulties response))))
@@ -49,9 +46,8 @@
                  :turn    "p1"
                  :markers ["X" "O"]
                  :board-size :3x3}
-          choice "0"
           response (sut/handle-screen state choice)]
-      (should= [["X"] [""] [""] [""] [""] [""] [""] [""] [""]] (:board response))
+      (should= [[""] ["X"] [""] [""] [""] [""] [""] [""] [""]] (:board response))
       (should= :game (:screen response))
       (should= "p2" (:turn response))))
 
@@ -71,7 +67,7 @@
                     (fn [s idx]
                       (reset! called? true)
                       (reset! called-args [s idx]))]
-        (transition/handle-screen state "4")
+        (transition/handle-screen state {"choice" "4"})
         (should @called?)
         (should= 4 (second @called-args))
         (should= "X" (-> @called-args first :board (nth 4) first)))))
