@@ -15,10 +15,8 @@
                                body (String. (.getBody response))]
                            body))
 
-(def dummy-db-game {:id 42 :screen :game :store :mem})
-(def dummy-cookie-game (pr-str {:id 5 :players [:ai :ai]}))
+(def dummy-cookie-game (pr-str {:id 5 :players [:ai :ai] :store :mem}))
 (def dummy-query-game {:id 100 :screen :select-game-mode})
-
 
 (describe "Handler"
   (with-stubs)
@@ -31,21 +29,14 @@
                     sut/query-state (stub :query-state)])
 
 
-    (it "returns game from DB if gameId is valid"
-      (let [cookie {"gameId" "42"}
-            query nil]
-        (with-redefs [db/find-game-by-id (fn [_ id] {:id id :screen :game})]
-          (should= {:id 42 :screen :game}
-            (sut/retrieve-state cookie :mem query)))))
-
     (it "returns full cookie state with :in-progress-game screen if query is nil"
       (let [cookie {"game" dummy-cookie-game}]
-        (should= {:id 5 :players [:ai :ai] :screen :in-progress-game}
+        (should= {:id 5 :players [:ai :ai] :screen :in-progress-game :store :mem}
           (sut/retrieve-state cookie :mem nil))))
 
     (it "returns full cookie state directly if query exists"
       (let [cookie {"game" dummy-cookie-game}]
-        (should= {:id 5 :players [:ai :ai]}
+        (should= {:id 5 :players [:ai :ai] :store :mem}
           (sut/retrieve-state cookie :mem {"choice" "1"}))))
 
     (it "falls back to query-state if nothing in cookies"

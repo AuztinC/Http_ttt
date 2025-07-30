@@ -1,58 +1,69 @@
 (ns http-ttt.core-spec
   (:require [speclj.core :refer :all]
-            [http-ttt.tttHandler :refer :all]
-            [http-ttt.core :as sut])
-  (:import (Server Server Sleep StatusCode)
+            [http-ttt.core :as sut]
+            [tic-tac-toe.psql :as pg])
+  (:import (Server ServerArgs)
            (Server.Routes RouteHandler)
-           [http_ttt.tttHandler TttHandler]
-           (Server.HTTP HttpResponse)))
+           (Server.HTTP HttpResponse)
+           (Server Server StatusCode)))
 
-; obj.someMethod(10)
-; (.someMethod obj 10)
-;
-; "<h1>Tic Tac Toe</h1>".getBytes()
-; arr
-; Array.toString() => B[@0x9876
-;
-; Object a = new Object()
-; (def a (Object.))
-;
+(definterface DummyServer
+  (addRoute [^String path handler])
+  (start []))
 
-(defprotocol MyProtocol
-  (foo [_this]))
+(defn dummy-server [captured]
+  (reify DummyServer
+    (addRoute [_ path handler]
+      (swap! captured assoc :route [path handler]))
+    (start [_]
+      (swap! captured assoc :started true))))
 
-(deftype MyType []
-  MyProtocol
-  (foo [_this] (prn "bar")))
+(def dummy-handler
+  (reify RouteHandler
+    (handle [_ _]
+      (HttpResponse. StatusCode/OK
+        (.getBytes "Content-Type: text/html")
+        (.getBytes "<h1>Hello</h1>")))))
 
 
-(deftype MySleeper []
-  Sleep
-  (sleep [_this millis] (prn (format "slept %s millis" millis))))
-
-(describe "main"
+(describe "-main"
   (with-stubs)
-
-  #_(it "constructs TttHandler with :mem store by default"
-    ;; define a stubbed Server
-    (let [fake-handler (reify RouteHandler
-                         (handle [_ _]
-                           (HttpResponse. StatusCode/OK "text/html" (.getBytes "<h1>"))))
-
-          fake-server (stub [:server
-                             :addRoute (fn [_ _ _] nil)
-                             :start (fn [_] nil)])]
-
+  (it "constructs TttHandler with :mem store and adds route"
+    (let [captured (atom {})
+          fake-handler dummy-handler
+          fake-server (dummy-server captured)]
       (with-redefs [sut/handler-factory (fn [store]
                                           (should= :mem store)
                                           fake-handler)
                     sut/server-factory (fn [_] fake-server)]
         (sut/-main)
+        (should= ["/ttt\\?*.*" fake-handler] (:route @captured))
+        (should (:started @captured)))))
 
-        ;; optionally assert that .addRoute was called
-        (should-have-invoked :server {:with [:any "/ttt" fake-handler]}))))
+  (it "constructs TttHandler with :file store and adds route"
+    (let [captured (atom {})
+          fake-handler dummy-handler
+          fake-server (dummy-server captured)]
+      (with-redefs [sut/handler-factory (fn [store]
+                                          (should= :file store)
+                                          fake-handler)
+                    sut/server-factory (fn [_] fake-server)]
+        (sut/-main "-file")
+        (should= ["/ttt\\?*.*" fake-handler] (:route @captured))
+        (should (:started @captured)))))
 
-
-
+  (it "constructs TttHandler with :psql store and adds route"
+    (let [captured (atom {})
+          fake-handler dummy-handler
+          fake-server (dummy-server captured)]
+      (with-redefs [sut/handler-factory (fn [store]
+                                          (should= :psql store)
+                                          fake-handler)
+                    sut/server-factory (fn [_] fake-server)
+                    pg/db-setup (stub :db-setup)]
+        (sut/-main "-psql")
+        (should= ["/ttt\\?*.*" fake-handler] (:route @captured))
+        (should (:started @captured)))))
 
   )
+

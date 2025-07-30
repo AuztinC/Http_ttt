@@ -50,7 +50,7 @@
                                 (not (= store (:store game)))
                                 nil
 
-                                (nil? query)
+                                (and (nil? query) (:board game))
                                 (assoc game :screen :in-progress-game)
 
                                 :else game)))]
