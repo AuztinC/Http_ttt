@@ -1,21 +1,21 @@
-(ns http-ttt.core-spec
+(ns http-ttt.main-spec
   (:require [speclj.core :refer :all]
-            [http-ttt.core :as sut]
+            [http-ttt.main :as sut]
             [tic-tac-toe.psql :as pg])
   (:import (Server ServerArgs)
            (Server.Routes RouteHandler)
            (Server.HTTP HttpResponse)
            (Server Server StatusCode)))
 
-(definterface DummyServer
-  (addRoute [^String path handler])
-  (start []))
+(defprotocol DummyServer
+  (addRoute [_this ^String path handler])
+  (start [_this]))
 
 (defn dummy-server [captured]
   (reify DummyServer
-    (addRoute [_ path handler]
+    (addRoute [_this path handler]
       (swap! captured assoc :route [path handler]))
-    (start [_]
+    (start [_this]
       (swap! captured assoc :started true))))
 
 (def dummy-handler

@@ -10,4 +10,4 @@
         :extra-paths ["spec"]
         :main-opts   ["-m" "speclj.main"]}
 
- :run  {:main-opts ["-m" "http-ttt.core"]}} }
+ :run  {:main-opts ["-m" "http-ttt.main"]}} }

@@ -1,4 +1,4 @@
-(ns http-ttt.core
+(ns http-ttt.main
   (:require [http-ttt.tttHandler :refer :all]
             [tic-tac-toe.psql :as pg]
             [tic-tac-toe.edn]
@@ -6,7 +6,7 @@
             [tic-tac-toe.human-turn]
             [tic-tac-toe.ai-turn])
   (:import (Server Server ServerArgs)
-           [http_ttt.tttHandler TttHandler]))
+           (http_ttt.tttHandler TttHandler)))
 
 (defn handler-factory [store]
   (TttHandler. store))
